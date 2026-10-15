@@ -36,6 +36,9 @@ export type Transaction = {
   /** cor/ícone vêm da categoria raiz quando a subcategoria não define */
   category_color: string | null;
   category_root: string | null;
+  origin: 'csv' | 'manual';
+  bill_instance_id: string | null;
+  notes: string | null;
 };
 
 export type Category = {
@@ -79,7 +82,8 @@ const TX_SELECT = `
   SELECT t.id, t.account_id, a.name AS account_name, t.posted_on, t.amount_cents, t.type, t.description_raw AS description,
          t.merchant_key, t.category_id, c.name AS category_name, t.category_source, t.category_confidence,
          t.installment_n, t.installment_total,
-         coalesce(c.color, pc.color) AS category_color, coalesce(pc.id, c.id) AS category_root
+         coalesce(c.color, pc.color) AS category_color, coalesce(pc.id, c.id) AS category_root,
+         t.origin, t.bill_instance_id, t.notes
   FROM transactions t
   JOIN accounts a ON a.id = t.account_id
   LEFT JOIN categories c ON c.id = t.category_id

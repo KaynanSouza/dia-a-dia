@@ -1,8 +1,9 @@
 import { deleteDatabaseFiles } from '@/db/client';
 import { bus } from '@/events/bus';
 import { dirs, removeDir } from '@/lib/files';
-import { clearAllNotifications } from '@/notifications/scheduler';
+import { clearAllNotifications } from '@/services/notifications/scheduler';
 import { deleteDbKey } from '@/security/keystore/db-key';
+import { secureKv } from '@/security/keystore/secure-kv';
 import { lockStore } from '@/security/lock/lock-store';
 
 export const WIPE_CONFIRM_WORD = 'APAGAR';
@@ -18,5 +19,7 @@ export async function wipeAllData() {
   await deleteDbKey();
   await lockStore.clear();
   await clearAllNotifications();
+  await secureKv.del('notif.action_queue').catch(() => {});
+  await secureKv.del('notif.last_response').catch(() => {});
   for (const d of Object.values(dirs)) removeDir(d());
 }

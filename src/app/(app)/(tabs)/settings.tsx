@@ -19,9 +19,14 @@ export default function Settings() {
         <ListItem icon="backup" iconColor="#0EA5E9" title="Backup" subtitle="Cópia criptografada e restauração" onPress={() => router.push('/settings/backup')} />
       </Group>
 
+      <Group title="Contas a pagar">
+        <ListItem icon="bell" iconColor="#F59E0B" title="Lembretes e alertas" subtitle="Antecedência, silêncio, privacidade e diagnóstico" onPress={() => router.push('/settings/alerts')} />
+        <ListItem icon="bills" iconColor="#EC4899" title="Nova conta a pagar" onPress={() => router.push('/bills/new')} />
+      </Group>
+
       <Group title="Organização">
         <ListItem icon="tag" iconColor="#F97316" title="Categorias" subtitle="Categorias e subcategorias" onPress={() => router.push('/settings/categories')} />
-        <ListItem icon="plus" iconColor="#10B981" title="Nova conta" subtitle="Conta corrente ou cartão de crédito" onPress={() => router.push('/accounts/new')} />
+        <ListItem icon="bank" iconColor="#10B981" title="Nova conta bancária" subtitle="Conta corrente, cartão ou carteira" onPress={() => router.push('/accounts/new')} />
       </Group>
 
       <Group title="Seus dados">

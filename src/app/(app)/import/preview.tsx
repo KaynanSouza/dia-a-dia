@@ -13,7 +13,7 @@ import { IMPORT_ERROR_MESSAGE, type ImportError } from '@/import/limits';
 import { importProgress, useImportProgress } from '@/import/progress-store';
 import { discardSession, getSession } from '@/import/session';
 import { IMPORT_STEPS } from '@/import/steps';
-import { ensureNotificationPermission } from '@/notifications/backup-reminder';
+import { ensureNotificationPermission } from '@/services/notifications/backup-reminder';
 import { useTheme } from '@/theme';
 
 const STAGE_LABEL = { reading: 'Lendo arquivo', deduplicating: 'Verificando duplicatas', categorizing: 'Categorizando' } as const;

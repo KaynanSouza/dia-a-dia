@@ -4,7 +4,7 @@ import { Switch } from 'react-native';
 import { Card, Group, IconBadge, ListItem, Muted, Screen, Title } from '@/components/ui';
 import { useDb, useDbQuery } from '@/db/DatabaseProvider';
 import { getSetting, setSetting } from '@/db/repositories/settings.repo';
-import { ensureNotificationPermission, scheduleBackupReminder } from '@/notifications/backup-reminder';
+import { ensureNotificationPermission, scheduleBackupReminder } from '@/services/notifications/backup-reminder';
 import { useTheme } from '@/theme';
 
 export default function Backup() {

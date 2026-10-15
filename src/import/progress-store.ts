@@ -12,7 +12,7 @@ export type ImportProgress = {
   errorCode: string | null;
   /** erro inesperado: mensagem técnica para o usuário relatar */
   errorDetail: string | null;
-  result: { importLogId: string; imported: number; duplicates: number; categorized: number; transfers: number } | null;
+  result: { importLogId: string; imported: number; duplicates: number; categorized: number; transfers: number; billsLinked?: number } | null;
 };
 
 const INITIAL: ImportProgress = { phase: 'idle', stage: null, ratio: 0, rows: 0, errorCode: null, errorDetail: null, result: null };

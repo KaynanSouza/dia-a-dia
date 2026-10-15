@@ -112,7 +112,12 @@ export default function Transactions() {
               icon="list"
               title="Nenhuma transação ainda"
               text="Importe o extrato CSV do seu banco e o app categoriza tudo sozinho."
-              action={<Button title="Importar extrato" icon="import" onPress={() => router.push('/import/upload')} />}
+              action={
+                <View style={{ gap: 8 }}>
+                  <Button title="Importar extrato" icon="import" onPress={() => router.push('/import/upload')} />
+                  <Button title="Lançar manualmente" icon="plus" variant="secondary" onPress={() => router.push('/transactions/manual')} />
+                </View>
+              }
             />
           )
         }
@@ -141,6 +146,7 @@ export default function Transactions() {
                 <Text style={[s.subtitle, !tx.category_id && tx.type === 'expense' && { color: t.warning }]} numberOfLines={1}>
                   {hint || tx.category_name || 'Sem categoria'}
                   {tx.installment_n ? ` · ${tx.installment_n}/${tx.installment_total}` : ''} · {tx.account_name}
+                  {tx.origin === 'manual' ? ' · manual' : ''}{tx.bill_instance_id ? ' · conta paga' : ''}
                 </Text>
               </View>
               <Amount cents={tx.amount_cents} size={15} />
@@ -149,6 +155,14 @@ export default function Transactions() {
           );
         }}
       />
+      <Pressable
+        onPress={() => router.push('/transactions/manual')}
+        style={({ pressed }) => [s.fab, pressed && { transform: [{ scale: 0.96 }] }]}
+        accessibilityRole="button"
+        accessibilityLabel="Adicionar receita ou despesa"
+      >
+        <Icon name="plus" size={28} color="#FFF" />
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -156,7 +170,8 @@ export default function Transactions() {
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: t.bg },
-    content: { padding: 16, paddingBottom: 32 },
+    content: { padding: 16, paddingBottom: 96 },
+    fab: { position: 'absolute', right: 20, bottom: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center', shadowColor: t.primary, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
     search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: t.surface, borderRadius: 14, paddingHorizontal: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
     searchInput: { flex: 1, paddingVertical: 12, fontSize: 16, color: t.text },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 },

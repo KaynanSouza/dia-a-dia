@@ -3,8 +3,10 @@ import { AppState } from 'react-native';
 
 import { acquireDbLease } from '@/db/client';
 import { logError } from '@/logging/logger';
-import { getNotifications } from '@/notifications/native';
+import { getNotifications } from '@/services/notifications/native';
+import { rescheduleBillReminders } from '@/services/notifications/reminders';
 import { analyze } from './analyze';
+import { autoLinkImported } from '@/transactions/manual';
 import { commitPlan } from './commit';
 import { errorDetail, ImportError } from './limits';
 import { importProgress } from './progress-store';
@@ -47,7 +49,7 @@ async function sendLocal(body: string | null) {
   try {
     if (!(await N.getPermissionsAsync()).granted) return;
     // Só contagens: nada de valores ou estabelecimentos na tela bloqueada
-    await N.scheduleNotificationAsync({ content: { title: 'Dia a Dia', body, data: { route: '/import' } }, trigger: null });
+    await N.scheduleNotificationAsync({ content: { title: 'Dia a Dia', body, data: { route: '/import' } }, trigger: { channelId: 'general' } });
   } catch {}
 }
 
@@ -71,7 +73,13 @@ export function runCommit(db: SQLiteDatabase) {
   const plan = session.plan;
   return runJob(
     'committing',
-    () => commitPlan(db, session, plan),
+    async () => {
+      const r = await commitPlan(db, session, plan);
+      // A-01: despesa importada com o mesmo valor de uma conta pendente perto do vencimento → paga
+      const billsLinked = await autoLinkImported(db, r.importLogId).catch(() => 0);
+      if (billsLinked) rescheduleBillReminders(db, 'import').catch(() => {});
+      return { ...r, billsLinked };
+    },
     (result) => {
       finishSession(); // apaga o CSV original
       importProgress.set({ phase: 'done', stage: null, ratio: 1, rows: result.imported, result }, true);

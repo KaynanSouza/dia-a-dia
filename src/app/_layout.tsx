@@ -7,13 +7,16 @@ import { TestModeBanner } from '@/components/TestModeBanner';
 import { Loading } from '@/components/ui';
 import { peekDatabase } from '@/db/client';
 import { startLogger } from '@/logging/logger';
-import { initNotificationHandler } from '@/notifications/native';
+import { startNotificationResponses } from '@/services/notifications/actions';
+import { initNotificationHandler, setupChannelsAndCategories } from '@/services/notifications/native';
 import { AppLockProvider, useAppLock } from '@/security/lock/AppLockProvider';
 import { PrivacyShield } from '@/security/privacy/PrivacyShield';
 import { useTheme } from '@/theme';
 
 startLogger(peekDatabase);
 initNotificationHandler();
+setupChannelsAndCategories().catch(() => {});
+startNotificationResponses();
 
 function Gate() {
   const { status } = useAppLock();

@@ -5,10 +5,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Meter, MonthBars, StackedBar } from '@/components/charts';
 import { Icon, categoryIcon } from '@/components/Icon';
-import { Button, Card, EmptyState, IconBadge, Loading, Notice, Screen, ScreenHeader, SectionTitle, formatCents } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, IconBadge, ListItem, Loading, Notice, Screen, ScreenHeader, SectionTitle, formatCents, formatDate } from '@/components/ui';
+import { listPendingInstances } from '@/bills/repo';
+import { billStatus, BILL_STATUS_LABEL } from '@/bills/types';
 import { loadDashboard } from '@/dashboard/service';
 import { useDbQuery } from '@/db/DatabaseProvider';
 import { currentMonthSP, monthLabel, shiftMonth } from '@/lib/time';
+import { addDays, todayLocal } from '@/services/recurrence/dates';
 import { makeStyles, useTheme } from '@/theme';
 
 const pctDelta = (cur: number, prev: number) => (prev ? Math.round(((cur - prev) / prev) * 100) : null);
@@ -21,6 +24,8 @@ export default function Dashboard() {
   const [ym, setYm] = useState(currentMonthSP());
   const [showAllCats, setShowAllCats] = useState(false);
   const { data, loading } = useDbQuery((db) => loadDashboard(db, ym), [ym]);
+  const today = todayLocal();
+  const { data: upcoming } = useDbQuery((db) => listPendingInstances(db, addDays(today, 7)), [today]);
   const isCurrent = ym >= currentMonthSP();
 
   const series = useMemo(() => {
@@ -69,6 +74,37 @@ export default function Dashboard() {
           <HeroStat icon="down" label="Despesas" cents={overview.expense_cents} delta={expenseDelta} invert />
         </View>
       </LinearGradient>
+
+      <View style={s.quick}>
+        <QuickAction icon="down" label="Despesa" color={t.danger} onPress={() => router.push({ pathname: '/transactions/manual', params: { type: 'expense' } })} />
+        <QuickAction icon="up" label="Receita" color={t.success} onPress={() => router.push({ pathname: '/transactions/manual', params: { type: 'income' } })} />
+        <QuickAction icon="bills" label="Conta" color="#EC4899" onPress={() => router.push('/bills/new')} />
+        <QuickAction icon="import" label="Importar" color={t.primary} onPress={() => router.push('/import/upload')} />
+      </View>
+
+      {!!upcoming?.length && (
+        <Card style={{ gap: 4, paddingHorizontal: 0, paddingBottom: 6 }}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
+            <SectionTitle action="Ver todas" onAction={() => router.push('/bills')}>
+              Próximas contas
+            </SectionTitle>
+          </View>
+          {upcoming.slice(0, 4).map((b) => {
+            const st = billStatus(b, today);
+            return (
+              <ListItem
+                key={b.id}
+                icon={categoryIcon(b.category_root)}
+                iconColor={b.category_color ?? t.primary}
+                title={b.name}
+                subtitle={`vence ${formatDate(b.due_on)}${b.amount_cents ? ` · ${formatCents(b.amount_cents)}` : ''}`}
+                right={<Badge label={BILL_STATUS_LABEL[st]} tone={st === 'vencida' ? 'danger' : st === 'vence_hoje' ? 'warning' : 'info'} />}
+                onPress={() => router.push({ pathname: '/bills/[id]', params: { id: b.id } })}
+              />
+            );
+          })}
+        </Card>
+      )}
 
       {!overview.tx_count && (
         <Card>
@@ -177,6 +213,16 @@ export default function Dashboard() {
   );
 }
 
+function QuickAction({ icon, label, color, onPress }: { icon: 'up' | 'down' | 'bills' | 'import'; label: string; color: string; onPress: () => void }) {
+  const s = useStyles();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [s.quickItem, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel={label}>
+      <IconBadge name={icon} color={color} size={48} />
+      <Text style={s.quickLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function HeroStat({ icon, label, cents, delta, invert }: { icon: 'up' | 'down'; label: string; cents: number; delta: number | null; invert?: boolean }) {
   const s = useStyles();
   const good = delta === null ? null : invert ? delta <= 0 : delta >= 0;
@@ -220,6 +266,9 @@ function DreSection({ title, lines }: { title: string; lines: { category_id: str
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
     switcher: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+    quick: { flexDirection: 'row', justifyContent: 'space-between' },
+    quickItem: { alignItems: 'center', gap: 6, flex: 1 },
+    quickLabel: { color: t.text, fontSize: 12, fontWeight: '600' },
     switchBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
     hero: { borderRadius: 24, padding: 20, gap: 6, overflow: 'hidden' },
     heroGlow: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.08)', top: -90, right: -60 },

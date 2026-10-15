@@ -12,7 +12,7 @@ import { setSetting } from '@/db/repositories/settings.repo';
 import { bus } from '@/events/bus';
 import { dirs, ensureDir, freshFile, purgeOlderThan, removeDir } from '@/lib/files';
 import { DB_ENCRYPTED } from '@/lib/runtime';
-import { scheduleBackupReminder } from '@/notifications/backup-reminder';
+import { scheduleBackupReminder } from '@/services/notifications/backup-reminder';
 import { encodePrefix, packPayload, PLAIN_SNAPSHOT_KEY, type BackupHeader } from './format';
 import { assertPasswordPolicy, DEFAULT_KDF, deriveKey } from './kdf';
 

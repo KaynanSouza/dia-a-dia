@@ -6,7 +6,10 @@ import { getSetting } from '@/db/repositories/settings.repo';
 import { purgeExpiredImports } from '@/import/csv-retention';
 import { flush } from '@/logging/logger';
 import { rotateEventLog } from '@/logging/rotation';
-import { scheduleBackupReminder } from '@/notifications/backup-reminder';
+import { setSetting } from '@/db/repositories/settings.repo';
+import { drainActionQueue, takePendingTest } from '@/services/notifications/actions';
+import { scheduleBackupReminder } from '@/services/notifications/backup-reminder';
+import { rescheduleBillReminders } from '@/services/notifications/reminders';
 
 /** Roda a cada abertura do banco (após unlock). Cada tarefa é independente. */
 export async function runMaintenance(db: SQLiteDatabase) {
@@ -23,6 +26,14 @@ export async function runMaintenance(db: SQLiteDatabase) {
       );
     },
     () => scheduleBackupReminder(db),
+    // A-05: ações tocadas na notificação com o app travado/fechado
+    () => drainActionQueue(db),
+    async () => {
+      const test = takePendingTest();
+      if (test) await setSetting(db, 'reminders.last_test', test);
+    },
+    // A-04: janela de 90 dias de instâncias + reconciliação (cobre fuso alterado, reboot e restore)
+    () => rescheduleBillReminders(db, 'open'),
   ];
   for (const t of tasks) {
     try {

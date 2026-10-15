@@ -74,8 +74,17 @@ export default function TransactionDetail() {
         {tx.installment_n ? (
           <ListItem icon="card" title="Parcela" right={<Text style={s.value}>{tx.installment_n}/{tx.installment_total}</Text>} />
         ) : null}
+        <ListItem icon={tx.origin === 'manual' ? 'edit' : 'import'} title="Origem" right={<Text style={s.value}>{tx.origin === 'manual' ? 'Lançamento manual' : 'Extrato importado'}</Text>} />
+        {tx.bill_instance_id ? (
+          <ListItem icon="bills" title="Pagou a conta" onPress={() => router.push({ pathname: '/bills/[id]', params: { id: tx.bill_instance_id! } })} />
+        ) : null}
+        {tx.notes ? <ListItem icon="doc" title="Observação" subtitle={tx.notes} /> : null}
         <ListItem icon="sparkles" title="Categorizada por" right={<Text style={s.value}>{(SOURCE_LABEL[tx.category_source] ?? tx.category_source) + confidence}</Text>} />
       </Group>
+
+      {tx.origin === 'manual' && (
+        <Button title="Editar lançamento" icon="edit" variant="secondary" onPress={() => router.push({ pathname: '/transactions/manual', params: { id: tx.id } })} />
+      )}
 
       <SectionTitle>Alterar categoria</SectionTitle>
       {similar > 0 && tx.merchant_key ? (

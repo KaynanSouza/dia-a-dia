@@ -19,6 +19,13 @@ export type AppEvents = {
   'categorize.learned': { affected: number; similar: boolean };
   'ml.trained': { samples: number; features: number; ms: number };
   'data.exported': { transactions: number };
+  'tx.manual_saved': { action: 'create' | 'update' | 'delete'; linked_bill: boolean };
+  'bill.saved': { action: 'create' | 'update' | 'delete'; recurring: boolean };
+  'bill.paid': { via: 'app' | 'notification' | 'import'; with_tx: boolean };
+  'bill.reopened': { via: 'app' };
+  'reminders.rescheduled': { desired: number; scheduled: number; cancelled: number; capped: boolean; reason: string };
+  'reminders.action': { action: 'paid' | 'snooze' | 'open'; queued: boolean };
+  'reminders.test': { delay_s: number };
   'data.wiped': Record<string, never>;
   error: { scope: string; code: string };
 };

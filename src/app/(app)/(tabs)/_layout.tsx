@@ -29,6 +29,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="home" options={{ title: 'Início', tabBarIcon: tabIcon('home') }} />
       <Tabs.Screen name="transactions" options={{ title: 'Transações', tabBarIcon: tabIcon('list') }} />
+      <Tabs.Screen name="bills" options={{ title: 'Contas', tabBarIcon: tabIcon('bills') }} />
       <Tabs.Screen name="import" options={{ title: 'Importar', tabBarIcon: tabIcon('import') }} />
       <Tabs.Screen name="settings" options={{ title: 'Ajustes', tabBarIcon: tabIcon('settings') }} />
     </Tabs>

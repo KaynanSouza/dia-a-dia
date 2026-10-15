@@ -24,6 +24,6 @@ export async function scheduleBackupReminder(db: SQLiteDatabase) {
   await N.scheduleNotificationAsync({
     identifier: BACKUP_REMINDER_ID,
     content: { title: 'Hora do backup', body: 'Faça o backup mensal do Dia a Dia.', data: { route: '/settings/backup' } },
-    trigger: { type: N.SchedulableTriggerInputTypes.MONTHLY, day: 1, hour: 10, minute: 0 },
+    trigger: { type: N.SchedulableTriggerInputTypes.MONTHLY, day: 1, hour: 10, minute: 0, channelId: 'backup' },
   });
 }

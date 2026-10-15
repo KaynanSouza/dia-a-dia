@@ -37,6 +37,7 @@ export default function Progress() {
             <Stat value={r.duplicates} label="duplicadas" />
           </View>
           {r.transfers ? <Muted center>{r.transfers} transferência(s) entre suas contas identificadas.</Muted> : null}
+          {r.billsLinked ? <Muted center>{r.billsLinked} conta(s) a pagar marcada(s) como paga(s) automaticamente.</Muted> : null}
         </Card>
         <Notice tone="info">Você pode desfazer esta importação inteira em até 30 dias na aba Importar.</Notice>
         <Button title="Ver painel" icon="home" onPress={() => finish('/home')} />

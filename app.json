@@ -21,6 +21,9 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO"
+      ],
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ]
     },
     "ios": {
@@ -59,7 +62,8 @@
       "expo-notifications",
       "expo-document-picker",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

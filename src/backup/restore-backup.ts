@@ -12,7 +12,7 @@ import { toFsPath } from '@/lib/bytes';
 import { dirs, ensureDir, freshFile, removeDir } from '@/lib/files';
 import { copyPickedTo, FileAccessError, FileTooLargeError, pickDocument, releasePicked } from '@/lib/picked-file';
 import { DB_ENCRYPTED } from '@/lib/runtime';
-import { rescheduleAllNotifications } from '@/notifications/scheduler';
+import { rescheduleAllNotifications } from '@/services/notifications/scheduler';
 import { getOrCreateDbKey } from '@/security/keystore/db-key';
 import { BackupError, type BackupErrorCode } from './errors';
 import { decodeEnvelope, PLAIN_SNAPSHOT_KEY, unpackPayload } from './format';
