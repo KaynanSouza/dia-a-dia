@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { useAppLock, useLockoutRemaining } from '@/security/lock/AppLockProvider';
-import { Button, ErrorText, Muted, PinField } from './ui';
+import { Button, Card, ErrorText, IconBadge, Muted, PinField, Title } from './ui';
 
 /** Reautenticação (biometria ou PIN) antes de ações sensíveis: backup, restaurar, apagar. */
 export function ReauthPrompt({ onConfirmed, actionLabel }: { onConfirmed: () => void; actionLabel: string }) {
@@ -23,12 +23,14 @@ export function ReauthPrompt({ onConfirmed, actionLabel }: { onConfirmed: () => 
   };
 
   return (
-    <>
-      <Muted>Confirme sua identidade para {actionLabel}.</Muted>
-      {lock.config.biometricEnabled && <Button title="Usar biometria" variant="secondary" onPress={withBiometrics} />}
+    <Card style={{ gap: 14 }}>
+      <IconBadge name="shield" size={52} />
+      <Title>Confirme que é você</Title>
+      <Muted>Para {actionLabel}, use a biometria ou digite seu PIN.</Muted>
+      {lock.config.biometricEnabled && <Button title="Usar biometria" icon="biometric" variant="secondary" onPress={withBiometrics} />}
       <PinField label="PIN" value={pin} onChange={setPin} />
       {remaining > 0 ? <ErrorText>Muitas tentativas. Aguarde {remaining}s.</ErrorText> : <ErrorText>{error}</ErrorText>}
       <Button title="Confirmar" onPress={withPin} disabled={pin.length !== 6 || remaining > 0} loading={lock.busy} />
-    </>
+    </Card>
   );
 }

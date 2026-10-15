@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { BACKUP_ERROR_MESSAGE, BackupError } from '@/backup/errors';
 import { inspectBackup, pickBackupFile, restoreBackup } from '@/backup/restore-backup';
 import { ReauthPrompt } from '@/components/ReauthPrompt';
-import { Button, ErrorText, Field, Muted, Screen, Title } from '@/components/ui';
+import { ProgressBar } from '@/components/charts';
+import { Button, Card, EmptyState, ErrorText, Field, IconBadge, Muted, Notice, Screen, Title } from '@/components/ui';
 import { useDb } from '@/db/DatabaseProvider';
 
 const CONFIRM_WORD = 'SUBSTITUIR';
@@ -23,9 +24,9 @@ export default function RestoreBackup() {
 
   const pick = async () => {
     setError(undefined);
-    const f = await pickBackupFile();
-    if (!f) return;
     try {
+      const f = await pickBackupFile();
+      if (!f) return;
       setInfo(await inspectBackup(f));
       setFile(f);
     } catch (e) {
@@ -54,9 +55,9 @@ export default function RestoreBackup() {
   if (!file || !info) {
     return (
       <Screen>
-        <Muted>Escolha um arquivo .diabkp gerado pelo Dia a Dia.</Muted>
+        <EmptyState icon="restore" title="Restaurar backup" text="Escolha um arquivo .diabkp gerado pelo Dia a Dia, de qualquer lugar do celular." />
         <ErrorText>{error}</ErrorText>
-        <Button title="Escolher arquivo" onPress={pick} />
+        <Button title="Escolher arquivo" icon="doc" onPress={pick} />
       </Screen>
     );
   }
@@ -64,8 +65,11 @@ export default function RestoreBackup() {
   if (!confirmed) {
     return (
       <Screen>
-        <Title>Backup de {new Date(info.createdAt).toLocaleString('pt-BR')}</Title>
-        <Muted>Versão do app: {info.appVersion} · schema v{info.schemaVersion}</Muted>
+        <Card style={{ alignItems: 'center' }}>
+          <IconBadge name="backup" size={52} />
+          <Title>Backup de {new Date(info.createdAt).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })}</Title>
+          <Muted>Versão do app: {info.appVersion} · schema v{info.schemaVersion}</Muted>
+        </Card>
         {!info.compatible && <ErrorText>Este backup não é compatível com esta versão do app.</ErrorText>}
         {info.compatible && <ReauthPrompt actionLabel="restaurar o backup" onConfirmed={() => setConfirmed(true)} />}
       </Screen>
@@ -74,12 +78,12 @@ export default function RestoreBackup() {
 
   return (
     <Screen>
-      <Muted>Todos os dados atuais deste aparelho serão substituídos pelos do backup. Seu PIN e biometria continuam os mesmos.</Muted>
+      <Notice tone="warning" title="Os dados atuais serão substituídos">Seu PIN e biometria continuam os mesmos.</Notice>
       <Field label="Senha do backup" value={password} onChangeText={setPassword} secureTextEntry autoComplete="off" />
       <Field label={`Digite ${CONFIRM_WORD} para confirmar`} value={word} onChangeText={setWord} autoCapitalize="characters" />
-      {progress !== null && <Muted>Verificando senha… {Math.round(progress * 100)}%</Muted>}
+      {progress !== null && <ProgressBar ratio={progress} label="Verificando senha…" />}
       <ErrorText>{error}</ErrorText>
-      <Button title="Restaurar" variant="danger" onPress={run} loading={progress !== null} disabled={!password || word !== CONFIRM_WORD} />
+      <Button title="Restaurar" icon="restore" variant="danger" onPress={run} loading={progress !== null} disabled={!password || word !== CONFIRM_WORD} />
     </Screen>
   );
 }

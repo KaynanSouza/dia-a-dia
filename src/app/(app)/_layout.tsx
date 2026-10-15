@@ -3,15 +3,31 @@ import { Stack } from 'expo-router';
 import { wipeAllData } from '@/data-rights/wipe';
 import { DatabaseProvider } from '@/db/DatabaseProvider';
 import { useAppLock } from '@/security/lock/AppLockProvider';
+import { useTheme } from '@/theme';
 
 export default function AppLayout() {
   const { resetAfterWipe } = useAppLock();
+  const t = useTheme();
   return (
     <DatabaseProvider onKeyLost={() => wipeAllData().then(resetAfterWipe)}>
-      <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
+      <Stack
+        screenOptions={{
+          headerBackButtonDisplayMode: 'minimal',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: t.bg },
+          headerTintColor: t.primary,
+          headerTitleStyle: { color: t.text, fontWeight: '700' },
+          contentStyle: { backgroundColor: t.bg },
+        }}
+      >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="accounts/new" options={{ title: 'Nova conta', presentation: 'modal' }} />
-        <Stack.Screen name="import/review" options={{ title: 'Revisar importação' }} />
+        <Stack.Screen name="transactions/[id]" options={{ title: 'Transação' }} />
+        <Stack.Screen name="import/upload" options={{ title: 'Importar extrato' }} />
+        <Stack.Screen name="import/mapping" options={{ title: 'Importar extrato' }} />
+        <Stack.Screen name="import/preview" options={{ title: 'Importar extrato' }} />
+        <Stack.Screen name="import/progress" options={{ title: 'Importar extrato', headerBackVisible: false, gestureEnabled: false }} />
+        <Stack.Screen name="settings/categories" options={{ title: 'Categorias' }} />
         <Stack.Screen name="settings/security" options={{ title: 'Segurança' }} />
         <Stack.Screen name="settings/backup/index" options={{ title: 'Backup' }} />
         <Stack.Screen name="settings/backup/export" options={{ title: 'Fazer backup' }} />

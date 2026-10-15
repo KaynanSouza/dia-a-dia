@@ -1,19 +1,23 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
-type Fingerprintable = { postedOn: string; amountCents: number; descriptionNorm: string };
-
 /**
- * Fingerprint determinístico por conta. Inclui o índice de ocorrência da tupla (data, valor, descrição)
- * dentro do arquivo: dois cafés iguais no mesmo dia continuam sendo duas transações, e reimportar o
- * mesmo extrato (ou um período sobreposto) gera os mesmos fingerprints → deduplicação.
+ * Chave de idempotência (C-03): sha256("v1|conta|data|centavos|descrição_norm|ocorrência").
+ * `occurrence` = n-ésima vez que a tupla (data, valor, descrição) aparece NO ARQUIVO: dois cafés
+ * iguais no mesmo dia são duas transações; reimportar o mesmo extrato (ou período sobreposto)
+ * gera os mesmos hashes. Formato congelado: mudar invalida a deduplicação de dados existentes.
  */
-export function assignFingerprints<T extends Fingerprintable>(accountId: string, rows: T[]): (T & { fingerprint: string })[] {
-  const seen = new Map<string, number>();
-  return rows.map((r) => {
-    const base = `${r.postedOn}|${r.amountCents}|${r.descriptionNorm}`;
-    const n = (seen.get(base) ?? 0) + 1;
-    seen.set(base, n);
-    return { ...r, fingerprint: bytesToHex(sha256(utf8ToBytes(`v1|${accountId}|${base}|${n}`))) };
-  });
+export function dedupHash(accountId: string, postedOn: string, amountCents: number, descriptionNorm: string, occurrence: number) {
+  return bytesToHex(sha256(utf8ToBytes(`v1|${accountId}|${postedOn}|${amountCents}|${descriptionNorm}|${occurrence}`)));
+}
+
+/** Contador de ocorrências por tupla dentro de um arquivo. */
+export class OccurrenceCounter {
+  private seen = new Map<string, number>();
+  next(postedOn: string, amountCents: number, descriptionNorm: string): number {
+    const k = `${postedOn}|${amountCents}|${descriptionNorm}`;
+    const n = (this.seen.get(k) ?? 0) + 1;
+    this.seen.set(k, n);
+    return n;
+  }
 }

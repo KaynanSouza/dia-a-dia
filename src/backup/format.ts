@@ -14,6 +14,7 @@
 import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { readU32be, u32be } from '@/lib/bytes';
+import { utf8Decode } from '@/lib/text';
 import { BackupError } from './errors';
 import type { KdfParams } from './kdf';
 
@@ -35,6 +36,9 @@ export type BackupHeader = {
 
 export type Manifest = { dbKey: string; dbSha256: string; dbBytes: number };
 
+/** dbKey sentinela: snapshot sem SQLCipher (gerado no modo de teste do Expo Go). */
+export const PLAIN_SNAPSHOT_KEY = '0'.repeat(64);
+
 /** MAGIC ‖ len ‖ header — também usado como AAD. */
 export function encodePrefix(header: BackupHeader): Uint8Array {
   const h = utf8ToBytes(JSON.stringify(header));
@@ -49,7 +53,7 @@ export function decodeEnvelope(bytes: Uint8Array) {
 
   let header: BackupHeader;
   try {
-    header = JSON.parse(new TextDecoder().decode(bytes.subarray(12, 12 + hLen))) as BackupHeader;
+    header = JSON.parse(utf8Decode(bytes.subarray(12, 12 + hLen))) as BackupHeader;
   } catch {
     throw new BackupError('not_a_backup');
   }
@@ -77,7 +81,7 @@ export function unpackPayload(p: Uint8Array): { manifest: Manifest; db: Uint8Arr
   if (mLen > 1024 || 4 + mLen > p.length) throw new BackupError('integrity');
   let manifest: Manifest;
   try {
-    manifest = JSON.parse(new TextDecoder().decode(p.subarray(4, 4 + mLen))) as Manifest;
+    manifest = JSON.parse(utf8Decode(p.subarray(4, 4 + mLen))) as Manifest;
   } catch {
     throw new BackupError('integrity');
   }

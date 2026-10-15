@@ -1,5 +1,6 @@
 import { M0001_CORE } from '../schema/0001_core.sql';
 import { M0002_FINANCE } from '../schema/0002_finance.sql';
+import { M0003_IMPORT_PIPELINE } from '../schema/0003_import_pipeline.sql';
 
 export type Migration = { version: number; name: string; sql: string };
 
@@ -7,6 +8,7 @@ export type Migration = { version: number; name: string; sql: string };
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: 'core', sql: M0001_CORE },
   { version: 2, name: 'finance', sql: M0002_FINANCE },
+  { version: 3, name: 'import_pipeline', sql: M0003_IMPORT_PIPELINE },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

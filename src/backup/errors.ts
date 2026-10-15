@@ -8,7 +8,9 @@ export type BackupErrorCode =
   | 'integrity'
   | 'too_large'
   | 'invalid_kdf'
-  | 'swap_failed';
+  | 'swap_failed'
+  | 'needs_encrypted_build'
+  | 'file_access';
 
 export class BackupError extends Error {
   constructor(public code: BackupErrorCode) {
@@ -28,4 +30,6 @@ export const BACKUP_ERROR_MESSAGE: Record<BackupErrorCode, string> = {
   too_large: 'Arquivo grande demais.',
   invalid_kdf: 'Parâmetros de criptografia inválidos no arquivo.',
   swap_failed: 'Não foi possível concluir a restauração. Seus dados atuais foram mantidos.',
+  file_access: 'Não foi possível ler o arquivo escolhido. Se ele está só na nuvem, abra-o uma vez para baixar e tente de novo.',
+  needs_encrypted_build: 'Este backup veio do app instalado (criptografado) e não pode ser aberto no Expo Go. Restaure no app instalado.',
 };

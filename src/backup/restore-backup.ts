@@ -1,25 +1,40 @@
 import { gcm } from '@noble/ciphers/aes.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
-import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
-import { attachKeyed, dbFile, getDatabase, keyPragma, swapDatabase } from '@/db/client';
+import { dbFile, exportDatabaseTo, getDatabase, keyPragma, swapDatabase } from '@/db/client';
 import { MIN_RESTORABLE_SCHEMA, SCHEMA_VERSION } from '@/db/migrations';
 import { bus } from '@/events/bus';
 import type { BackupStage } from '@/events/types';
 import { toFsPath } from '@/lib/bytes';
-import { dirs, freshFile, removeDir } from '@/lib/files';
+import { dirs, ensureDir, freshFile, removeDir } from '@/lib/files';
+import { copyPickedTo, FileAccessError, FileTooLargeError, pickDocument, releasePicked } from '@/lib/picked-file';
+import { DB_ENCRYPTED } from '@/lib/runtime';
 import { rescheduleAllNotifications } from '@/notifications/scheduler';
 import { getOrCreateDbKey } from '@/security/keystore/db-key';
 import { BackupError, type BackupErrorCode } from './errors';
-import { decodeEnvelope, unpackPayload } from './format';
+import { decodeEnvelope, PLAIN_SNAPSHOT_KEY, unpackPayload } from './format';
 import { deriveKey } from './kdf';
 
+const MAX_BACKUP_BYTES = 512 * 1024 * 1024;
+
+/** Seletor do sistema → cópia na pasta privada (lê content:// do Drive, Downloads etc.). */
 export async function pickBackupFile(): Promise<File | null> {
-  const r = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true, multiple: false });
-  return r.canceled ? null : new File(r.assets[0].uri);
+  const doc = await pickDocument('*/*');
+  if (!doc) return null;
+  const dest = new File(ensureDir(new Directory(Paths.cache, 'restore-in')), 'incoming.diabkp');
+  try {
+    if ((await copyPickedTo(doc, dest, MAX_BACKUP_BYTES)) === 0) throw new BackupError('not_a_backup');
+  } catch (e) {
+    if (e instanceof FileTooLargeError) throw new BackupError('too_large');
+    if (e instanceof FileAccessError) throw new BackupError('file_access');
+    throw e;
+  } finally {
+    releasePicked(doc);
+  }
+  return dest;
 }
 
 /** Leitura barata para a UI mostrar data/versão ANTES de pedir a senha. */
@@ -64,8 +79,12 @@ export async function restoreBackup(file: File, password: string, onProgress?: (
       throw fail('integrity', 'integrity');
     }
 
+    const plainSnapshot = manifest.dbKey === PLAIN_SNAPSHOT_KEY;
+    // Expo Go não tem SQLCipher: não consegue abrir snapshot cifrado de um build real
+    if (!DB_ENCRYPTED && !plainSnapshot) throw fail('schema', 'needs_encrypted_build');
+
     removeDir(work);
-    const incoming = freshFile(work, 'incoming.db'); // ainda cifrado com a chave efêmera
+    const incoming = freshFile(work, 'incoming.db'); // cifrado com a chave efêmera (ou texto claro, se plainSnapshot)
     incoming.write(dbBytes);
     plaintext.fill(0);
     const staged = new File(work, 'staged.db'); // será re-cifrado com a chave do aparelho
@@ -73,7 +92,7 @@ export async function restoreBackup(file: File, password: string, onProgress?: (
     // 4. Valida o snapshot e re-cifra com a chave do Keystore
     const tmp = await SQLite.openDatabaseAsync('incoming.db', {}, toFsPath(work.uri));
     try {
-      await tmp.execAsync(keyPragma(manifest.dbKey));
+      if (!plainSnapshot) await tmp.execAsync(keyPragma(manifest.dbKey));
       let integrity: { integrity_check: string }[];
       try {
         integrity = await tmp.getAllAsync<{ integrity_check: string }>('PRAGMA integrity_check;');
@@ -84,13 +103,10 @@ export async function restoreBackup(file: File, password: string, onProgress?: (
       const uv = await tmp.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
       if (uv?.user_version !== header.schemaVersion) throw fail('schema', 'integrity');
 
-      const deviceKey = await getOrCreateDbKey(dbFile().exists);
-      await tmp.execAsync(
-        `${attachKeyed(staged, 'staged', deviceKey)}
-         SELECT sqlcipher_export('staged');
-         PRAGMA staged.user_version = ${header.schemaVersion};
-         DETACH DATABASE staged;`,
-      );
+      // Build real: re-cifra com a chave do Keystore (aceita snapshot cifrado ou em texto claro).
+      // Modo de teste: cópia sem criptografia.
+      const deviceKey = DB_ENCRYPTED ? await getOrCreateDbKey(dbFile().exists) : null;
+      await exportDatabaseTo(tmp, staged, deviceKey, header.schemaVersion);
     } finally {
       await tmp.closeAsync();
     }

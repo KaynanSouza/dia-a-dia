@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { ReauthPrompt } from '@/components/ReauthPrompt';
-import { Button, ErrorText, Field, Muted, Screen } from '@/components/ui';
+import { Button, ErrorText, Field, Notice, Screen } from '@/components/ui';
 import { WIPE_CONFIRM_WORD, wipeAllData } from '@/data-rights/wipe';
 import { useAppLock } from '@/security/lock/AppLockProvider';
 
@@ -34,13 +34,13 @@ export default function Wipe() {
 
   return (
     <Screen>
-      <Muted>
+      <Notice tone="danger" title="Ação irreversível">
         Isto apaga definitivamente o banco de dados, a chave de criptografia, o PIN, as notificações e todos os arquivos temporários.
         Só um backup feito antes permite recuperar os dados.
-      </Muted>
+      </Notice>
       <Field label={`Digite ${WIPE_CONFIRM_WORD} para confirmar`} value={word} onChangeText={setWord} autoCapitalize="characters" />
       <ErrorText>{error}</ErrorText>
-      <Button title="Apagar tudo" variant="danger" onPress={run} loading={busy} disabled={word !== WIPE_CONFIRM_WORD} />
+      <Button title="Apagar tudo" icon="trash" variant="danger" onPress={run} loading={busy} disabled={word !== WIPE_CONFIRM_WORD} />
     </Screen>
   );
 }

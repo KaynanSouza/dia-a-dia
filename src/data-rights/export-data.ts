@@ -17,16 +17,21 @@ const csvCell = (v: unknown) => {
 /** F-04: JSON completo + CSV de transações na pasta privada; a UI compartilha cada um via expo-sharing. */
 export async function exportMyData(db: SQLiteDatabase): Promise<DataExport> {
   removeDir(dirs.dataExport());
-  const [accounts, categories, rules, transactions, imports, settings] = await Promise.all([
+  const [accounts, categories, rules, transactions, imports, profiles, dictionary, settings] = await Promise.all([
     db.getAllAsync('SELECT * FROM accounts ORDER BY created_at;'),
     db.getAllAsync('SELECT * FROM categories ORDER BY name;'),
-    db.getAllAsync('SELECT * FROM category_rules ORDER BY priority;'),
+    db.getAllAsync('SELECT * FROM categorization_rules ORDER BY priority;'),
     db.getAllAsync<Record<string, unknown>>(
-      `SELECT t.posted_on, a.name AS account, t.description, t.amount_cents, c.name AS category, t.notes, t.id
+      `SELECT t.posted_on, a.name AS account, t.description_raw AS description, t.amount_cents, t.type, c.name AS category,
+              t.category_source, t.installment_n, t.installment_total, t.notes, t.id
        FROM transactions t JOIN accounts a ON a.id = t.account_id LEFT JOIN categories c ON c.id = t.category_id
        ORDER BY t.posted_on, t.created_at;`,
     ),
-    db.getAllAsync('SELECT id, account_id, source, parser, rows_total, rows_imported, rows_duplicate, imported_at FROM imports;'),
+    db.getAllAsync(
+      'SELECT id, account_id, profile_id, status, rows_total, rows_imported, rows_duplicate, rows_error, started_at, finished_at, undone_at FROM import_logs;',
+    ),
+    db.getAllAsync('SELECT id, name, bank, kind, config, created_at FROM import_profiles;'),
+    db.getAllAsync("SELECT key, display_name, category_id FROM merchant_dictionary WHERE source = 'user';"),
     db.getAllAsync('SELECT key, value, updated_at FROM app_settings;'),
   ]);
 
@@ -34,15 +39,22 @@ export async function exportMyData(db: SQLiteDatabase): Promise<DataExport> {
   const json = freshFile(dirs.dataExport(), `dia-a-dia-dados-${stamp}.json`);
   json.write(
     JSON.stringify(
-      { exportedAt: new Date().toISOString(), schemaVersion: SCHEMA_VERSION, accounts, categories, rules, transactions, imports, settings },
+      {
+        exportedAt: new Date().toISOString(),
+        schemaVersion: SCHEMA_VERSION,
+        accounts, categories, rules, transactions, imports, profiles, dictionary, settings,
+      },
       null,
       2,
     ),
   );
 
-  const header = ['data', 'conta', 'descricao', 'valor', 'categoria', 'observacoes', 'id'];
+  const header = ['data', 'conta', 'descricao', 'valor', 'tipo', 'categoria', 'parcela', 'observacoes', 'id'];
   const lines = transactions.map((t) =>
-    [t.posted_on, t.account, t.description, ((t.amount_cents as number) / 100).toFixed(2).replace('.', ','), t.category, t.notes, t.id]
+    [
+      t.posted_on, t.account, t.description, ((t.amount_cents as number) / 100).toFixed(2).replace('.', ','), t.type, t.category,
+      t.installment_n ? `${t.installment_n}/${t.installment_total}` : '', t.notes, t.id,
+    ]
       .map(csvCell)
       .join(';'),
   );

@@ -6,13 +6,14 @@ import { getRandomBytes } from 'expo-crypto';
 import { File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-import { attachKeyed, getDatabase } from '@/db/client';
+import { exportDatabaseTo, getDatabase } from '@/db/client';
 import { SCHEMA_VERSION } from '@/db/migrations';
 import { setSetting } from '@/db/repositories/settings.repo';
 import { bus } from '@/events/bus';
 import { dirs, ensureDir, freshFile, purgeOlderThan, removeDir } from '@/lib/files';
+import { DB_ENCRYPTED } from '@/lib/runtime';
 import { scheduleBackupReminder } from '@/notifications/backup-reminder';
-import { encodePrefix, packPayload, type BackupHeader } from './format';
+import { encodePrefix, packPayload, PLAIN_SNAPSHOT_KEY, type BackupHeader } from './format';
 import { assertPasswordPolicy, DEFAULT_KDF, deriveKey } from './kdf';
 
 export type BackupProgress = { stage: 'snapshot' | 'kdf' | 'encrypt' | 'share'; kdf?: number };
@@ -28,13 +29,9 @@ export async function exportBackup(password: string, onProgress?: (p: BackupProg
   try {
     // 1. Snapshot consistente, cifrado com chave efêmera
     onProgress?.({ stage: 'snapshot' });
-    await db.execAsync(
-      `${attachKeyed(snap, 'snap', ephHex)}
-       SELECT sqlcipher_export('snap');
-       PRAGMA snap.user_version = ${SCHEMA_VERSION};
-       DETACH DATABASE snap;`,
-    );
+    await exportDatabaseTo(db, snap, DB_ENCRYPTED ? ephHex : null, SCHEMA_VERSION);
     const dbBytes = await snap.bytes();
+    const snapshotKey = DB_ENCRYPTED ? ephHex : PLAIN_SNAPSHOT_KEY;
 
     // 2. Envelope AES-256-GCM, com o header autenticado como AAD
     const header: BackupHeader = {
@@ -46,7 +43,7 @@ export async function exportBackup(password: string, onProgress?: (p: BackupProg
       kdf: { ...DEFAULT_KDF, salt: bytesToHex(getRandomBytes(16)) },
       cipher: { alg: 'aes-256-gcm', iv: bytesToHex(getRandomBytes(12)) },
     };
-    const plaintext = packPayload({ dbKey: ephHex, dbSha256: bytesToHex(sha256(dbBytes)), dbBytes: dbBytes.length }, dbBytes);
+    const plaintext = packPayload({ dbKey: snapshotKey, dbSha256: bytesToHex(sha256(dbBytes)), dbBytes: dbBytes.length }, dbBytes);
     const aad = encodePrefix(header);
 
     onProgress?.({ stage: 'kdf', kdf: 0 });

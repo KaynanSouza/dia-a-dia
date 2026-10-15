@@ -26,6 +26,22 @@ npx expo run:android   # ou run:ios — SQLCipher, biometria e SecureStore exige
 | Backup `.diabkp`: Argon2id + AES-256-GCM, restore com validação de integridade/schema e rollback | `src/backup/` |
 | Lembrete mensal de backup | `src/notifications/` |
 
+## Importação e categorização (Épico 2)
+
+| Requisito | Onde |
+|---|---|
+| Assistente upload → mapping → preview → progress | `src/app/(app)/import/` |
+| Leitura em streaming (64 KB), UTF-8/CP1252, CSV incremental, limite 10 MB / 50k linhas | `src/import/stream/`, `src/import/limits.ts` |
+| Processamento fatiado no tempo (UI não trava), cancelável | `src/import/scheduler.ts`, `src/import/analyze.ts` |
+| Commit tudo-ou-nada, notificação se terminar em segundo plano | `src/import/commit.ts`, `src/import/job.ts` |
+| Perfis embutidos (Nubank, Itaú, Bradesco, BB, Caixa, Inter) + perfis salvos | `src/import/profiles/` |
+| Idempotência por hash, desfazer importação em 30 dias | `src/core/dedup/fingerprint.ts`, `src/import/undo.ts` |
+| Categorização em 5 camadas (regras → normalização → dicionário → fuzzy → TF-IDF + Naive Bayes) | `src/categorization/` |
+| "Aplicar a todas as parecidas" | `src/categorization/learn.ts` |
+| Dashboard em SQL (visão mensal, DRE, top 10, comparativo), com reconciliação | `src/dashboard/` |
+
+React Native não tem Web Workers: o parsing roda em fatias de ~8 ms no thread JS, cedendo o event loop entre elas, enquanto I/O de arquivo e SQLite já rodam em threads nativas.
+
 ## Estrutura
 
 ```

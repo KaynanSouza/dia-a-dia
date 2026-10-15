@@ -3,6 +3,8 @@ import Constants from 'expo-constants';
 import { getRandomBytes } from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { withTransaction } from '@/db/transaction';
+
 import { bus } from '@/events/bus';
 import type { AppEvents } from '@/events/types';
 import { rotateEventLog } from './rotation';
@@ -50,7 +52,7 @@ export async function flush(db: SQLiteDatabase) {
   if (!buffer.length) return;
   const batch = buffer.splice(0, buffer.length);
   try {
-    await db.withTransactionAsync(async () => {
+    await withTransaction(db, async () => {
       for (const [ts, level, event, ctx] of batch) {
         await db.runAsync(
           'INSERT INTO event_log (ts, level, event, context, session_id, app_version) VALUES (?, ?, ?, ?, ?, ?);',

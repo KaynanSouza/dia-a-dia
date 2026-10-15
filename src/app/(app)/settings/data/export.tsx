@@ -2,7 +2,7 @@ import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
 
 import { ReauthPrompt } from '@/components/ReauthPrompt';
-import { Button, ErrorText, Muted, Screen } from '@/components/ui';
+import { Button, ErrorText, Notice, Screen } from '@/components/ui';
 import { exportMyData, type DataExport } from '@/data-rights/export-data';
 import { useDb } from '@/db/DatabaseProvider';
 
@@ -36,16 +36,15 @@ export default function ExportData() {
 
   return (
     <Screen>
-      <Muted>
-        Os arquivos NÃO são criptografados: contêm todas as suas transações em texto legível. Para guardar uma cópia segura, use o
-        Backup.
-      </Muted>
+      <Notice tone="warning" title="Arquivos sem criptografia">
+        Contêm todas as suas transações em texto legível. Para guardar uma cópia segura, use o Backup.
+      </Notice>
       <ErrorText>{error}</ErrorText>
       {!result ? (
-        <Button title="Gerar JSON e CSV" onPress={generate} loading={busy} />
+        <Button title="Gerar JSON e CSV" icon="doc" onPress={generate} loading={busy} />
       ) : (
         <>
-          <Muted>{result.transactions} transações exportadas.</Muted>
+          <Notice tone="success">{result.transactions} transações exportadas.</Notice>
           <Button title="Compartilhar JSON" onPress={() => Sharing.shareAsync(result.json.uri, { mimeType: 'application/json', UTI: 'public.json' })} />
           <Button
             title="Compartilhar CSV"

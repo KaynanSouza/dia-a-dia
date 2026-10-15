@@ -17,5 +17,8 @@ export function ctEqual(a: Uint8Array, b: Uint8Array): boolean {
 /** file:///… → /… (ATTACH do SQLite e o diretório do expo-sqlite exigem caminho de FS) */
 export const toFsPath = (uri: string) => decodeURIComponent(uri.replace(/^file:\/\//, ''));
 
+/** /… → file:///… (inverso de toFsPath) */
+export const toFileUri = (path: string) => (path.startsWith('file://') ? path : `file://${encodeURI(path)}`);
+
 /** Literal SQL seguro para caminhos. */
 export const sqlString = (s: string) => `'${s.replace(/'/g, "''")}'`;

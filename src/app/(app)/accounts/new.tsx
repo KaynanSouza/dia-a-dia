@@ -1,9 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-import { Button, ErrorText, Field, ListItem, Muted, Screen } from '@/components/ui';
+import type { IconName } from '@/components/Icon';
+import { Button, ErrorText, Field, Group, ListItem, Screen } from '@/components/ui';
 import { useDb } from '@/db/DatabaseProvider';
 import { ACCOUNT_KIND_LABEL, createAccount, type AccountKind } from '@/db/repositories/finance.repo';
+
+const KIND_ICON: Record<AccountKind, IconName> = { checking: 'bank', savings: 'income', credit_card: 'card', cash: 'cash', investment: 'chart' };
 
 export default function NewAccount() {
   const { db, bump } = useDb();
@@ -26,9 +29,11 @@ export default function NewAccount() {
   return (
     <Screen>
       <Field label="Nome" value={name} onChangeText={setName} autoCapitalize="words" maxLength={60} />
-      {(Object.keys(ACCOUNT_KIND_LABEL) as AccountKind[]).map((k) => (
-        <ListItem key={k} title={ACCOUNT_KIND_LABEL[k]} onPress={() => setKind(k)} right={kind === k ? <Muted>✓</Muted> : null} />
-      ))}
+      <Group title="Tipo">
+        {(Object.keys(ACCOUNT_KIND_LABEL) as AccountKind[]).map((k) => (
+          <ListItem key={k} icon={KIND_ICON[k]} title={ACCOUNT_KIND_LABEL[k]} onPress={() => setKind(k)} selected={kind === k} />
+        ))}
+      </Group>
       <Field label="Banco (opcional)" value={institution} onChangeText={setInstitution} autoCapitalize="words" maxLength={60} />
       <Field
         label="4 últimos dígitos (opcional)"
@@ -36,10 +41,10 @@ export default function NewAccount() {
         onChangeText={(t) => setLast4(t.replace(/\D/g, '').slice(0, 4))}
         keyboardType="number-pad"
         maxLength={4}
+        hint="Guardamos apenas os 4 últimos dígitos, nunca o número completo."
       />
-      <Muted>Guardamos apenas os 4 últimos dígitos, nunca o número completo.</Muted>
       <ErrorText>{error}</ErrorText>
-      <Button title="Criar conta" onPress={save} disabled={!name.trim() || (last4.length > 0 && last4.length !== 4)} />
+      <Button title="Criar conta" icon="check" onPress={save} disabled={!name.trim() || (last4.length > 0 && last4.length !== 4)} />
     </Screen>
   );
 }

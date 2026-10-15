@@ -2,6 +2,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { withTransaction } from '@/db/transaction';
+
 import { BOOTSTRAP_SQL } from '../schema/0000_bootstrap.sql';
 import { MIGRATIONS, SCHEMA_VERSION } from './index';
 
@@ -29,7 +31,7 @@ export async function runMigrations(db: SQLiteDatabase): Promise<{ from: number;
   }
 
   for (const m of MIGRATIONS.filter((x) => x.version > from)) {
-    await db.withExclusiveTransactionAsync(async (tx) => {
+    await withTransaction(db, async (tx) => {
       await tx.execAsync(m.sql);
       await tx.runAsync(
         'INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?);',
