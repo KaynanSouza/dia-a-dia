@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Dia a Dia",
+    "slug": "dia-a-dia",
+    "scheme": "diaadia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.diaadia.app",
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.diaadia.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Desbloquear o Dia a Dia com Face ID.",
+        "UIFileSharingEnabled": false,
+        "LSSupportsOpeningDocumentsInPlace": false
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png" },
+    "plugins": [
+      "expo-router",
+      ["expo-sqlite", { "useSQLCipher": true }],
+      ["expo-secure-store", { "configureAndroidBackup": true, "faceIDPermission": "Desbloquear o Dia a Dia com Face ID." }],
+      ["expo-local-authentication", { "faceIDPermission": "Desbloquear o Dia a Dia com Face ID." }],
+      "expo-notifications",
+      "expo-document-picker",
+      "expo-sharing"
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
